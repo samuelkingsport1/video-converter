@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <input type="file" id="fileSelector" />
+  <button onclick="convertVideo()">Convert and Download</button>
+  <script src="https://ffmpegwasm.github.io/ffmpeg.js/ffmpeg.min.js"></script>
+  <script>
+    const convertVideo = async () => {
+      // Get the file from the input field
+      const file = document.querySelector('#fileSelector').files[0];
+      if (!file) {
+        alert('Please select a file');
+        return;
+      }
+
+      // Initialize FFmpeg
+      const { createFFmpeg, fetchFile } = FFmpeg;
+      const ffmpeg = createFFmpeg({ log: true });
+      await ffmpeg.load();
+
+      // Convert the File object to a Uint8Array
+      const fileData = new Uint8Array(await file.arrayBuffer());
+
+      // Write the file to FFmpeg's filesystem
+      ffmpeg.FS('writeFile', 'input.webm', fileData);
+
+      // Run the FFmpeg command
+      await ffmpeg.run('-i', 'input.webm', 'output.mp4');
+
+      // Read the result
+      const output = ffmpeg.FS('readFile', 'output.mp4');
+
+      // Create a URL for the converted file
+      const url = URL.createObjectURL(new Blob([output.buffer], { type: 'video/mp4' }));
+
+      // Create a link to download the file
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'output.mp4';
+      link.click();
+
+      // Clean up
+      URL.revokeObjectURL(url);
+    };
+  </script>
+</body>
+</html>
